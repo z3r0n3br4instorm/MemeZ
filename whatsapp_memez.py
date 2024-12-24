@@ -59,9 +59,11 @@ class MemeEngine:
         print(f"[MEMEZ-{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {text}")
 
     def memeUpdateCheckThread(self):
-        i = 0
+        t = 0
         while True:
             try:
+                if t == 500:
+                    t = 0
                 newMemes = []
                 for subreddit in self.subredditList:
                     self.memeEngine.fetch(subreddit)
@@ -76,10 +78,13 @@ class MemeEngine:
                     if sum(self.refreshCount) >= 2:
                         self.log("Refresh Ready!")
                         self.refreshReady = True
-                if i == 0:
+                if t == 0:
                     time.sleep(180)  # Increased sleep time for reduced frequency
+                elif t == 100:
+                    os.system("rm *jpeg*")
                 else:
                     time.sleep(random.randint(60, 300))  # Randomized longer sleep time for efficiency
+                t+= 1
             except Exception as e:
                 self.log(f"Error: {e}")
                 time.sleep(2)
