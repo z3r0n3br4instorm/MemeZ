@@ -78,16 +78,14 @@ class MemeEngine:
                     if sum(self.refreshCount) >= 2:
                         self.log("Refresh Ready!")
                         self.refreshReady = True
-                if t == 0:
-                    time.sleep(180)  # Increased sleep time for reduced frequency
-                elif t == 100:
+
+                time.sleep(1800)  # Increased sleep time for reduced frequency
+                if t == 100:
                     os.system("rm *jpeg*")
-                else:
-                    time.sleep(random.randint(60, 300))  # Randomized longer sleep time for efficiency
                 t+= 1
             except Exception as e:
                 self.log(f"Error: {e}")
-                time.sleep(2)
+                time.sleep(10)
                 self.log("Retrying...")
 
     async def sendMemes(self):
@@ -123,7 +121,7 @@ class MemeEngine:
                             self.log(f"Sent meme: {self.latestMemes[i]}")
                         else:
                             self.log("Meme skipped due to duplication")
-                await asyncio.sleep(2)  # Sleep for a short time between checks
+                await asyncio.sleep(500)  # Sleep for a short time between checks
             except Exception as e:
                 self.log(f"Error: {e}")
                 await asyncio.sleep(2)
