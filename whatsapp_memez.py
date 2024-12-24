@@ -77,30 +77,34 @@ class MemeEngine:
     def memeUpdateCheckThread(self):
         i = 0
         while True:
-            newMemes = []
-            for subreddit in self.subredditList:
-                self.memeEngine.fetch(subreddit)
-                meme = self.memeEngine.getMeme()
-                meme_basename = os.path.basename(meme)
-                if meme_basename not in self.sentMemes:  # Avoid repeating sent memes
-                    newMemes.append(meme)
-            for i in range(0, len(newMemes)):
-                if newMemes[i] != self.latestMemes[i]:
-                    self.log(
-                        f"New meme from r/{self.subredditList[i]}!, refresh pending..."
-                    )
-                    self.refreshCount[i] = 1
-                if sum(self.refreshCount) >= 2:
-                    self.log("Refresh Ready !")
-                    self.refreshReady = True
-            if i == 0:
-                time.sleep(120)
-            else:
-                time.sleep(random.randint(60, 200))
-            if i == 5000:
-                i = 0
-            i += 1
-
+            try:
+                newMemes = []
+                for subreddit in self.subredditList:
+                    self.memeEngine.fetch(subreddit)
+                    meme = self.memeEngine.getMeme()
+                    meme_basename = os.path.basename(meme)
+                    if meme_basename not in self.sentMemes:  # Avoid repeating sent memes
+                        newMemes.append(meme)
+                for i in range(0, len(newMemes)):
+                    if newMemes[i] != self.latestMemes[i]:
+                        self.log(
+                            f"New meme from r/{self.subredditList[i]}!, refresh pending..."
+                        )
+                        self.refreshCount[i] = 1
+                    if sum(self.refreshCount) >= 2:
+                        self.log("Refresh Ready !")
+                        self.refreshReady = True
+                if i == 0:
+                    time.sleep(120)
+                else:
+                    time.sleep(random.randint(60, 200))
+                if i == 5000:
+                    i = 0
+                i += 1
+            except Exception as e:
+                self.log(f"Error: {e}")
+                time.sleep(2)
+                self.log("Retrying...")
     def sendMemes(self):
         whatsappEngine = WhatsappComm()
         while True:
