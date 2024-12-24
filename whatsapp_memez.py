@@ -5,6 +5,7 @@ import threading
 import datetime
 import json
 import random
+import requests
 
 global groupName
 groupName = "MemeZ"
@@ -64,15 +65,25 @@ class MemeEngine:
         self.refreshCount = [0, 0, 0, 0]
         self.refreshThread = threading.Thread(target=self.memeUpdateCheckThread)
         self.sendMemesThread = threading.Thread(target=self.sendMemes)
-        self.sentMemes = set()  # Track sent memes
-        # time.sleep(2)
+        self.sentMemes = set()
+        # Define your proxy settings here
+        self.proxy = {
+            "http": "http://27.79.148.143:16000",
+            "https": "http://27.79.148.143:16000",
+        }
         self.refreshThread.start()
         self.sendMemesThread.start()
 
     def log(self, text):
-        print(
-            f"[MEMEZ-{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {text}"
-        )
+        print(f"[MEMEZ-{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {text}")
+
+    def fetch_with_proxy(self, url):
+        try:
+            response = requests.get(url, proxies=self.proxy)
+            return response
+        except requests.exceptions.RequestException as e:
+            self.log(f"Error fetching URL with proxy: {e}")
+            return None
 
     def memeUpdateCheckThread(self):
         i = 0
@@ -87,9 +98,7 @@ class MemeEngine:
                         newMemes.append(meme)
                 for i in range(0, len(newMemes)):
                     if newMemes[i] != self.latestMemes[i]:
-                        self.log(
-                            f"New meme from r/{self.subredditList[i]}!, refresh pending..."
-                        )
+                        self.log(f"New meme from r/{self.subredditList[i]}!, refresh pending...")
                         self.refreshCount[i] = 1
                     if sum(self.refreshCount) >= 2:
                         self.log("Refresh Ready !")
@@ -105,6 +114,7 @@ class MemeEngine:
                 self.log(f"Error: {e}")
                 time.sleep(2)
                 self.log("Retrying...")
+
     def sendMemes(self):
         whatsappEngine = WhatsappComm()
         while True:
@@ -123,19 +133,18 @@ class MemeEngine:
                                 self.latestMemes[i] = "MemeSkip"
                             else:
                                 self.latestMemes[i] = self.memeEngine.getMeme()
-                                os.system(
-                                    f"wget {self.latestMemes[i]}"
-                                )  # Download the meme
-                                self.sentMemes.add(meme_basename)  # Mark meme as sent
-
+                                # Use the fetch_with_proxy method to download the meme
+                                meme_url = self.latestMemes[i]
+                                response = self.fetch_with_proxy(meme_url)
+                                if response:
+                                    with open(os.path.basename(meme_url), 'wb') as f:
+                                        f.write(response.content)
+                                self.sentMemes.add(meme_basename)
                             self.refreshCount[i] = 0
 
                     # Send memes
                     for i in range(0, len(self.latestMemes)):
-                        if (
-                            self.latestMemes[i] != "MemeSkip"
-                            and self.latestMemes[i] not in self.memeSaves
-                        ):
+                        if self.latestMemes[i] != "MemeSkip" and self.latestMemes[i] not in self.memeSaves:
                             WhatsappComm().send_message(
                                 whatsappEngine.searchAndRetrieve(groupName),
                                 os.path.basename(self.latestMemes[i]),
